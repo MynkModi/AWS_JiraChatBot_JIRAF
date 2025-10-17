@@ -6,6 +6,9 @@ AI(AWS Bedrock) Based Chat bot for Jira JIRAF[Jira Intelligent Response Analytic
 AWS AI based Jira chat bot – JIRAF, that simplifies Jira data access through a natural conversational flow. It leverages powerful AWS Bedrock Agents for its core AI-driven services, including natural language understanding and query generation. It also uses another child project Jira Connector(https://github.com/MynkModi/aws_ai_jira_dataloader) to load Jira data into RDS tables at periodic intervals.
 
 
+This application allows users to ask two kind of questions related to JIRA. First is computational question based on JIRA data and second is defect recommendation related question based on historical Jira effects. Defect recommendation questions has to be prefixed with "defect:" word. Please find some simple questions below. Note: The data related to this questions is stored in RDS database(for computational questions) and Bedrock Knowledgebase(for defect recommendation questions).
+
+
 ## Installation
 This project is a standard Spring Boot abased chat pplication and can be run locally or deployed as a container. Lambda function(to read data from RDS db) associated with this project is added under resources folder. Similarly instructions for two bedrock agents  being used are also added under resources folder.
 
