@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<title>Chat with JIRAF - AI Bot for JIRA</title>
+	<link rel="stylesheet" href="styles.css" th:href="@{styles.css}">
+</head>
+
+<body>
+	<div class="container">
+		<div class="sidebar">
+			<div class="logo-section">
+				<div>
+					<img src="/images/jiraf-logo-words.png" alt="JIRAF AI Bot for JIRA Logo">
+				</div>
+			</div>
+
+			<div class="nav-section">
+				<div class="nav-item active">
+					<span class="nav-icon">💬</span>
+					<span>Chat</span>
+				</div>
+				<div class="nav-item">
+					<span class="nav-icon">📊</span>
+					<span>Analytics</span>
+				</div>
+				<div class="nav-item">
+					<span class="nav-icon">🔍</span>
+					<span>Search</span>
+				</div>
+				<div class="nav-item">
+					<span class="nav-icon">⚙️</span>
+					<span>Settings</span>
+				</div>
+				<div class="nav-item">
+					<span class="nav-icon">❓</span>
+					<span>Help</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="chat-container">
+
+			<div class="chat-header">
+				<h1>
+					CHAT WITH JIRAF
+					<span class="full-form">Jira Intelligent Response Analytics Framework</span>
+				</h1>
+			</div>
+
+			<div class="chat-messages" id="chatMessages">
+				<div class="welcome-message">
+					<p>I'm your AI-powered JIRA assistant. Ask me anything about your projects, issues, or generate
+						reports and charts!</p>
+				</div>
+			</div>
+
+			<div class="chat-input-container">
+				<div class="chat-input-wrapper">
+					<textarea class="chat-input" id="messageInput"
+						placeholder="Ask me about JIRA issues, generate reports, or request charts..."
+						rows="1"></textarea>
+					<button class="send-button" id="sendButton">
+						➤
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<script src="..static/script.js?v=1.26" th:src="@{script.js}"></script>
+
+</body>
+
+</html>

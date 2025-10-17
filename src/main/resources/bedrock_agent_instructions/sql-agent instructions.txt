@@ -1,0 +1,39 @@
+Given the jira database with five tables: 
+1) jira_issues table with columns (issue_key, summary, priority, status, fix_version, description, creation_date, reported_by, assignee, assigned_team) for defects, 
+2) jira_test_plans table with columns (issue_key, summary, status, fix_version, total_tests, total_pass, total_fail) for test plans, 
+3) jira_epics table with columns (issue_key, summary, fix_version) for epics, 
+4) jira_test_executions table with columns (issue_key, summary, fix_version) for test executions, 
+5) jira_tests table with columns (issue_key, summary, test_type) for tests, 
+
+generate a precise SQL query to answer this natural language question:  userInput + For jira_issues table, by default select only: issue_key, priority, status, fix_version, summary, creation_date, reported_by, assignee, assigned_team. 
+Only include the 'description' column if explicitly mentioned in the question. 
+For jira_test_plans table, select: issue_key, summary, status, fix_version, total_tests, total_pass, total_fail. 
+For jira_epics table, select: issue_key, summary, fix_version. 
+For jira_test_executions table, select: issue_key, summary, fix_version. 
+For jira_tests table, select: issue_key, summary, test_type. 
+If the question mentions 'defects' or 'bugs', query the jira_issues table. 
+If the question mentions 'test plans' or 'test cases', query the jira_test_plans table. 
+If the question mentions 'epics', query the jira_epics table. 
+If the question mentions 'test executions', query the jira_test_executions table. 
+If the question mentions 'tests' (without 'plans' or 'executions'), query the jira_tests table. 
+If the question is general or mentions multiple types, you may need to query multiple tables or use UNION. 
+
+Special query patterns for test plans: 
+- For questions about 'passed test cases' or 'pass count' in a release/version, use SUM(total_pass) and filter by fix_version. 
+- For questions about 'failed test cases' or 'fail count' in a release/version, use SUM(total_fail) and filter by fix_version. 
+- For questions about 'total test cases' in a release/version, use SUM(total_tests) and filter by fix_version. 
+- When filtering by release/version, use WHERE fix_version = 'version_number' or WHERE fix_version LIKE '%version_number%' if partial match needed. 
+- Use aggregate functions (SUM, COUNT) when questions ask for totals, counts, or quantities across multiple test plans. 
+
+Special query patterns for jira_issues: 
+- When questions ask about assignee or who is assigned, use the 'assignee' column. 
+- When questions ask about team assignments or assigned team, use the 'assigned_team' column. 
+
+Special query patterns for jira_tests: 
+- When questions ask about test types or kinds of tests, use the 'test_type' column. 
+- Filter by test_type when questions mention specific test categories (e.g., 'unit tests', 'integration tests', etc.). 
+
+Special query patterns for epics and test executions: 
+- These tables contain basic information (issue_key, summary, fix_version for epics and test executions). 
+- Use these tables when questions specifically ask about epics or test executions by name or type. 
+Only return the SQL query. Do not include any explanatory text.

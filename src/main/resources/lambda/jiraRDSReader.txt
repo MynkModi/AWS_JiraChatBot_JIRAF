@@ -1,0 +1,169 @@
+import pymysql
+import os
+import json
+
+rds_host = "jeeradb.dummy-host.ca-central-1.rds.amazonaws.com"
+username = "jeeradb"
+password = "dummy-pwd"
+db_name = "jeeradb"
+
+def lambda_handler(event, context):
+    try:
+        # Connect to the database
+        conn = pymysql.connect(host=rds_host, user=username, password=password, database=db_name)
+       
+        # Check if this is a query or chart data request
+        action = event.get('action', 'query')
+        sql_query = event.get('sqlQuery')
+       
+        if not sql_query:
+            return {
+                "statusCode": 400,
+                "body": "SQL query is required"
+            }
+       
+        if action == 'query':
+            # Execute the query and return formatted results
+            return handle_query(conn, sql_query)
+        elif action == 'chartData':
+            # Execute the query and return data formatted for chart generation
+            return handle_chart_data(conn, sql_query)
+        else:
+            # Insert data (existing functionality)
+            return handle_insert(conn, event)
+           
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": str(e)
+        }
+
+def handle_query(conn, sql_query):
+    with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+        cursor.execute(sql_query)
+        rows = cursor.fetchall()
+       
+        # Convert rows to JSON-serializable format
+        result = []
+        for row in rows:
+            # Convert any non-serializable types to strings
+            row_dict = {}
+            for key, value in row.items():
+                # Special handling for COUNT(*) and similar columns
+                if isinstance(value, (int, float)):
+                    row_dict[key] = value  # Keep numbers as numbers
+                elif value is None:
+                    row_dict[key] = None
+                else:
+                    row_dict[key] = str(value)
+            result.append(row_dict)
+           
+    return {
+        "statusCode": 200,
+        "body": json.dumps(result)
+    }
+
+def handle_chart_data(conn, sql_query):
+    with conn.cursor() as cursor:
+        cursor.execute(sql_query)
+        rows = cursor.fetchall()
+       
+        # Assuming the query returns label-value pairs for the chart
+        chart_data = {}
+        for row in rows:
+            # First column is the label (key), second column is the value
+            if len(row) >= 2:
+                label = str(row[0])
+                value = int(row[1]) if row[1] is not None else 0
+                chart_data[label] = value
+           
+    return {
+        "statusCode": 200,
+        "body": json.dumps(chart_data)
+    }
+
+def handle_insert(conn, event):
+    with conn.cursor() as cursor:
+        # Create the table if it doesn't exist with all required columns
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS jira_issues (
+                issue_key VARCHAR(50) PRIMARY KEY,
+                summary TEXT,
+                priority VARCHAR(20),
+                status VARCHAR(50),
+                fix_version TEXT,
+                description TEXT,
+                creation_date DATETIME,
+                reported_by VARCHAR(100)
+            )
+        """)
+        
+        # Check if event is a list or single item
+        if isinstance(event, list):
+            items = event
+        else:
+            items = [event]  # Treat single item as a list with one element
+       
+        for item in items:
+            # Skip items that don't have the required fields
+            if not item.get('issue_key'):
+                continue
+            
+            # Extract all fields with defaults
+            issue_key = item.get('issue_key', '')
+            summary = item.get('summary', '')
+            priority = item.get('priority', '')
+            status = item.get('status', '')
+            fix_version = item.get('fix_version', '')
+            description = item.get('description', '')
+            creation_date = item.get('creation_date', '')
+            reported_by = item.get('reported_by', '')
+            
+            # Clean up creation_date if needed
+            if creation_date:
+                try:
+                    # Handle JIRA date format and convert to MySQL compatible format
+                    if isinstance(creation_date, str):
+                        # Remove timezone info and milliseconds for MySQL compatibility
+                        creation_date_clean = creation_date
+                        if '+' in creation_date_clean:
+                            creation_date_clean = creation_date_clean.split('+')[0]
+                        if 'T' in creation_date_clean:
+                            creation_date_clean = creation_date_clean.replace('T', ' ')
+                        if '.' in creation_date_clean:
+                            creation_date_clean = creation_date_clean.split('.')[0]
+                        creation_date = creation_date_clean
+                except Exception as date_error:
+                    print(f"Date parsing error: {date_error}")
+                    creation_date = None
+            else:
+                creation_date = None
+                
+            sql = """
+            INSERT INTO jira_issues (issue_key, summary, priority, status, fix_version, description, creation_date, reported_by)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+                summary=VALUES(summary), 
+                priority=VALUES(priority), 
+                status=VALUES(status),
+                fix_version=VALUES(fix_version),
+                description=VALUES(description),
+                creation_date=VALUES(creation_date),
+                reported_by=VALUES(reported_by)
+            """
+            cursor.execute(sql, (
+                issue_key, 
+                summary, 
+                priority, 
+                status,
+                fix_version,
+                description,
+                creation_date,
+                reported_by
+            ))
+            
+    conn.commit()
+    return {
+        "statusCode": 200,
+        "body": "Data inserted successfully"
+    }
